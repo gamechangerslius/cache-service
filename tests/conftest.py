@@ -2,14 +2,13 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
-from asgi_lifespan import LifespanManager
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from cache_service.config import Settings
 from cache_service.db import create_engine, create_session_factory, init_db
 from cache_service.main import create_app
+from tests.support import SpyTransformer, serve
 
 
 @pytest.fixture
@@ -20,6 +19,11 @@ def settings(tmp_path: Path) -> Settings:
         database_url=f"sqlite+aiosqlite:///{tmp_path / 'test.db'}",
         transformer_latency_seconds=0,
     )
+
+
+@pytest.fixture
+def spy() -> SpyTransformer:
+    return SpyTransformer()
 
 
 @pytest.fixture
@@ -36,14 +40,6 @@ def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.fixture
-async def app(settings: Settings) -> AsyncIterator[FastAPI]:
-    # ASGITransport does not run lifespan events; LifespanManager does, like a real server.
-    application = create_app(settings)
-    async with LifespanManager(application):
-        yield application
-
-
-@pytest.fixture
-async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as http:
+async def client(settings: Settings, spy: SpyTransformer) -> AsyncIterator[AsyncClient]:
+    async with serve(create_app(settings, transformer=spy)) as http:
         yield http

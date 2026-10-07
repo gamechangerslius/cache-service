@@ -21,11 +21,6 @@ async def transform(
 
 
 @pytest.fixture
-def spy() -> SpyTransformer:
-    return SpyTransformer()
-
-
-@pytest.fixture
 def cached(spy: SpyTransformer) -> CachedTransformer:
     return CachedTransformer(spy, max_concurrency=10)
 

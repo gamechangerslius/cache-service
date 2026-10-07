@@ -1,6 +1,11 @@
 import asyncio
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
+from contextlib import asynccontextmanager
+
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 
 class SpyTransformer:
@@ -22,3 +27,13 @@ class SpyTransformer:
         if text in self.fail_on:
             raise RuntimeError(f"cannot transform {text!r}")
         return text.upper()
+
+
+@asynccontextmanager
+async def serve(app: FastAPI) -> AsyncIterator[AsyncClient]:
+    # ASGITransport does not run lifespan events; LifespanManager does, like a real server.
+    async with (
+        LifespanManager(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
+        yield client
