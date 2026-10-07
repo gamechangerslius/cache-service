@@ -7,15 +7,22 @@ from fastapi import FastAPI
 from cache_service import __version__
 from cache_service.api import router
 from cache_service.config import Settings
+from cache_service.db import create_engine, create_session_factory, init_db
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings if settings is not None else Settings()
 
     @asynccontextmanager
-    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _configure_logging(resolved.log_level)
-        yield
+        engine = create_engine(resolved.database_url)
+        await init_db(engine)
+        app.state.session_factory = create_session_factory(engine)
+        try:
+            yield
+        finally:
+            await engine.dispose()
 
     app = FastAPI(title="Cache Service", version=__version__, lifespan=lifespan)
     app.state.settings = resolved

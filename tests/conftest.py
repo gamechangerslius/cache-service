@@ -5,8 +5,10 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from cache_service.config import Settings
+from cache_service.db import create_engine, create_session_factory, init_db
 from cache_service.main import create_app
 
 
@@ -18,6 +20,19 @@ def settings(tmp_path: Path) -> Settings:
         database_url=f"sqlite+aiosqlite:///{tmp_path / 'test.db'}",
         transformer_latency_seconds=0,
     )
+
+
+@pytest.fixture
+async def engine(settings: Settings) -> AsyncIterator[AsyncEngine]:
+    db_engine = create_engine(settings.database_url)
+    await init_db(db_engine)
+    yield db_engine
+    await db_engine.dispose()
+
+
+@pytest.fixture
+def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    return create_session_factory(engine)
 
 
 @pytest.fixture
