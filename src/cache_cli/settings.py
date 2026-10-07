@@ -33,7 +33,7 @@ class CliSettings(BaseSettings):
     input: str | None = Field(default=None, description="JSON input file, or - for stdin")
     json_data: str | None = Field(default=None, description="JSON input passed inline")
     output: str = Field(default=STDIO, description="output file, or - for stdout")
-    timeout_seconds: PositiveFloat = Field(default=30.0, description="timeout of each request")
+    timeout_seconds: PositiveFloat = Field(default=120.0, description="timeout of each request")
 
     @model_validator(mode="after")
     def _exactly_one_input_source(self) -> Self:
