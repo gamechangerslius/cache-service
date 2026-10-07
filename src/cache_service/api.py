@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from cache_service.dependencies import PayloadServiceDep, SessionDep
 from cache_service.schemas import HealthResponse, PayloadCreate, PayloadCreated, PayloadRead
@@ -55,7 +56,15 @@ async def read_payload(payload_id: UUID, service: PayloadServiceDep) -> PayloadR
     return PayloadRead(output=output)
 
 
-@router.get("/health", tags=["ops"], summary="Liveness check, including the database")
+@router.get(
+    "/health",
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "The database is unavailable"}},
+    tags=["ops"],
+    summary="Health check, including the database",
+)
 async def health(session: SessionDep) -> HealthResponse:
-    await session.execute(text("SELECT 1"))
+    try:
+        await session.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Database unavailable") from exc
     return HealthResponse(status="ok")
