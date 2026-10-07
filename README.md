@@ -70,7 +70,7 @@ python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/uvicorn --factory cache_service.main:create_app --reload
 
-.venv/bin/ruff format --check . && .venv/bin/ruff check . && .venv/bin/mypy && .venv/bin/pytest --cov
+.venv/bin/ruff format --check . && .venv/bin/ruff check . && .venv/bin/mypy
 ```
 
 The Docker image installs the pinned versions from `requirements.lock`. After changing
@@ -80,6 +80,19 @@ dependencies, regenerate it in the same base image:
 docker run --rm -v "$PWD":/src:ro python:3.12-slim sh -c \
   "pip install -q /src && pip freeze --exclude cache-service" > requirements.lock
 ```
+
+## Tests
+
+```bash
+.venv/bin/pytest                      # all tests
+.venv/bin/pytest tests/unit           # unit tests only
+.venv/bin/pytest tests/integration    # integration tests only
+.venv/bin/pytest -k concurrent        # tests whose name matches
+.venv/bin/pytest --cov                # with a coverage report
+```
+
+No server, Docker or `.env` is needed: every test gets its own temporary SQLite database, and the
+CLI tests start their own server on a free port. Any warning fails the run.
 
 Unit tests cover pure logic and argument parsing. Integration tests use a real SQLite file per
 test, the app over ASGI, and the CLI against a live uvicorn server. The transformer is replaced
