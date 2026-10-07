@@ -5,6 +5,10 @@ from typing import Protocol
 logger = logging.getLogger(__name__)
 
 
+class TransformerError(Exception):
+    pass
+
+
 class Transformer(Protocol):
     async def __call__(self, text: str, /) -> str: ...
 
