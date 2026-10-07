@@ -21,7 +21,6 @@ def _isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    # _env_file=None: a developer's local .env must not change how tests behave.
     return Settings(
         _env_file=None,
         database_url=f"sqlite+aiosqlite:///{tmp_path / 'test.db'}",

@@ -41,7 +41,6 @@ class PayloadService:
                 self._session, [*request.list_1, *request.list_2]
             )
         except TransformerError:
-            # Persist what was transformed before the failure so a retry does not repeat it.
             await self._session.commit()
             raise
 

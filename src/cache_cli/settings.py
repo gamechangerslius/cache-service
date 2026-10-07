@@ -17,7 +17,6 @@ class CliSettings(BaseSettings):
         cli_prog_name="cache-cli",
         cli_kebab_case=True,
         cli_hide_none_type=True,
-        # Not AliasChoices: validation aliases bypass env_prefix, so plain HOST or R would leak in.
         cli_shortcuts={
             "host": "h",
             "repeat": "r",

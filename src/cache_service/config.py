@@ -11,7 +11,6 @@ class Settings(BaseSettings):
         env_prefix="CACHE_SERVICE_",
         env_file=".env",
         env_file_encoding="utf-8",
-        # The shared .env also holds CACHE_CLI_* keys; forbidding extras would crash startup.
         extra="ignore",
     )
 

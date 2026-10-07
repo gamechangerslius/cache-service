@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 FROM python:3.12-slim AS build
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv /opt/venv
@@ -22,5 +20,4 @@ VOLUME /data
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
-# One worker: SQLite has a single writer and in-flight transformer calls are shared per process.
 CMD ["uvicorn", "--factory", "cache_service.main:create_app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

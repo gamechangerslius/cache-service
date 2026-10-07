@@ -14,6 +14,5 @@ def render_output(items: Iterable[str]) -> str:
 
 
 def fingerprint(list_1: Sequence[str], list_2: Sequence[str]) -> str:
-    # Changing this canonical form orphans stored payloads: repeats would get new ids.
     canonical = json.dumps([list(list_1), list(list_2)], separators=(",", ":"))
     return hashlib.sha256(canonical.encode("ascii")).hexdigest()

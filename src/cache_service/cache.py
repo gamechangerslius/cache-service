@@ -40,7 +40,6 @@ class CachedTransformer:
             else:
                 computed[text] = outcome
 
-        # Stored even when some strings failed, so a retry only pays for the failed ones.
         await repository.add_many(computed)
         if len(computed) < len(misses):
             failed = len(misses) - len(computed)
@@ -55,7 +54,6 @@ class CachedTransformer:
             task = asyncio.create_task(self._call_transformer(text))
             self._in_flight[text] = task
             task.add_done_callback(lambda _: self._in_flight.pop(text, None))
-        # Shielded so a cancelled request does not cancel a call other requests are awaiting.
         return await asyncio.shield(task)
 
     async def _call_transformer(self, text: str) -> str:

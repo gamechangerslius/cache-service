@@ -27,5 +27,4 @@ async def test_waits_for_the_configured_latency() -> None:
     started = time.perf_counter()
     await transformer("text")
 
-    # A small tolerance for the event loop's clock resolution.
     assert time.perf_counter() - started >= latency * 0.9

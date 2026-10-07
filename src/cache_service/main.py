@@ -42,7 +42,6 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def validation_failed(_: Request, exc: RequestValidationError) -> JSONResponse:
-        # Errors echo the input; ASCII escaping keeps a lone surrogate in it from causing a 500.
         return _AsciiJSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content={"detail": jsonable_encoder(exc.errors())},
@@ -57,6 +56,5 @@ class _AsciiJSONResponse(JSONResponse):
 
 
 def _configure_logging(level: str) -> None:
-    # Uvicorn configures only its own loggers; without a root handler our records are dropped.
     logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("cache_service").setLevel(level)

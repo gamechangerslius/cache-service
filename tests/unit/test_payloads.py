@@ -24,7 +24,6 @@ def test_render_output_matches_the_spec_sample() -> None:
 
 
 def test_fingerprint_is_pinned() -> None:
-    # Stored payloads are found by this value; if the canonical form changes, they are orphaned.
     assert fingerprint(LIST_1, LIST_2) == (
         "db1643219a6c379b295897e1daa542e2a58690ab61fa70c673de661c46068a2f"
     )

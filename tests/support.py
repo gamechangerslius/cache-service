@@ -34,7 +34,6 @@ class SpyTransformer:
 
 @asynccontextmanager
 async def serve(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    # ASGITransport does not run lifespan events; LifespanManager does, like a real server.
     async with (
         LifespanManager(app),
         AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,

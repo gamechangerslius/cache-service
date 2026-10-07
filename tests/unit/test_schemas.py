@@ -41,7 +41,6 @@ def test_accepts_inputs_at_the_limits() -> None:
             id="string-too-long",
         ),
         pytest.param({"list_1": [1], "list_2": ["b"]}, "valid string", id="non-string-item"),
-        # Valid JSON ("\ud800" escape) that SQLite cannot store; must be a 422, not a 500.
         pytest.param({"list_1": ["a\ud800"], "list_2": ["b"]}, "unicode", id="lone-surrogate"),
         pytest.param(
             {"list_1": ["a"], "list_2": ["b"], "list3": ["c"]}, "Extra inputs", id="unknown-key"

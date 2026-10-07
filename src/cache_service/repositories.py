@@ -25,7 +25,6 @@ class TransformationRepository:
     async def add_many(self, outputs: Mapping[str, str]) -> None:
         if not outputs:
             return
-        # A concurrent request may have stored the same string; its result is identical.
         statement = (
             insert(Transformation)
             .values([{"input_text": text, "output_text": out} for text, out in outputs.items()])

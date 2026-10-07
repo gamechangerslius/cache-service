@@ -14,7 +14,6 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.1",
     "aiosqlite>=0.22",
     "pydantic>=2.13",
-    # cli_shortcuts (short flags that keep env lookups prefixed) is required by cache-cli.
     "pydantic-settings>=2.15",
     "httpx>=0.28",
 ]
@@ -78,5 +77,4 @@ asyncio_default_test_loop_scope = "function"
 [tool.coverage.run]
 source = ["cache_service", "cache_cli"]
 branch = true
-# SQLAlchemy runs async database code in greenlets, invisible to coverage otherwise.
 concurrency = ["greenlet", "thread"]

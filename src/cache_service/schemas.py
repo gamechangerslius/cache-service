@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 MAX_ITEMS = 1_000
 MAX_STRING_LENGTH = 1_000
 
-# The constraint also makes pydantic reject lone surrogates, which SQLite cannot store.
 Item = Annotated[str, StringConstraints(max_length=MAX_STRING_LENGTH)]
 
 
