@@ -42,20 +42,6 @@ line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
 
-[tool.ruff.lint]
-select = [
-    "E",     # pycodestyle errors
-    "W",     # pycodestyle warnings
-    "F",     # pyflakes
-    "I",     # isort
-    "B",     # flake8-bugbear
-    "UP",    # pyupgrade
-    "SIM",   # flake8-simplify
-    "ASYNC", # flake8-async
-    "PT",    # flake8-pytest-style
-    "RUF",   # ruff-specific
-]
-
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
