@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterable
 
 import pytest
@@ -94,3 +95,36 @@ async def test_failures_are_reported_and_successes_are_kept(
 
     assert result.outputs == {"a": "A", "b": "B"}
     assert spy.calls == {"a": 1, "b": 2}
+
+
+async def test_concurrent_requests_share_one_call_per_string(
+    session_factory: SessionFactory,
+) -> None:
+    spy = SpyTransformer(delay=0.05)
+    cached = CachedTransformer(spy, max_concurrency=10)
+
+    first, second = await asyncio.gather(
+        transform(session_factory, cached, ["a", "b"]),
+        transform(session_factory, cached, ["b", "c"]),
+    )
+
+    assert first.outputs == {"a": "A", "b": "B"}
+    assert second.outputs == {"b": "B", "c": "C"}
+    assert spy.calls == {"a": 1, "b": 1, "c": 1}
+
+
+async def test_cancelled_request_does_not_cancel_a_shared_call(
+    session_factory: SessionFactory,
+) -> None:
+    spy = SpyTransformer(delay=0.2)
+    cached = CachedTransformer(spy, max_concurrency=10)
+    leader = asyncio.create_task(transform(session_factory, cached, ["a"]))
+    await asyncio.sleep(0.05)
+    follower = asyncio.create_task(transform(session_factory, cached, ["a"]))
+    await asyncio.sleep(0.05)
+
+    leader.cancel()
+    result = await follower
+
+    assert result.outputs == {"a": "A"}
+    assert spy.calls == {"a": 1}
