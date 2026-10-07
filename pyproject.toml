@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cache-service"
+dynamic = ["version"]
+description = "FastAPI microservice that caches the results of an external string transformer."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.142",
+    "uvicorn[standard]>=0.54",
+    "sqlalchemy[asyncio]>=2.1",
+    "aiosqlite>=0.22",
+    "pydantic>=2.13",
+    # cli_shortcuts (short flags that keep env lookups prefixed) is required by cache-cli.
+    "pydantic-settings>=2.15",
+    "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "pytest-cov>=7.1",
+    "asgi-lifespan>=2.1",
+    "ruff>=0.16",
+    "mypy>=2.4",
+]
+
+[tool.hatch.version]
+path = "src/cache_service/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cache_service"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # flake8-bugbear
+    "UP",    # pyupgrade
+    "SIM",   # flake8-simplify
+    "ASYNC", # flake8-async
+    "PT",    # flake8-pytest-style
+    "RUF",   # ruff-specific
+]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "tests"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["cache_service"]
+branch = true
