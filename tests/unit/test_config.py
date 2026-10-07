@@ -1,5 +1,3 @@
-"""Settings resolution: environment beats .env, and a shared .env with CLI keys is accepted."""
-
 from pathlib import Path
 
 import pytest

@@ -1,26 +1,17 @@
-"""Request and response models: the public API contract.
-
-Kept free of FastAPI imports so the CLI can validate its input with the same rules.
-"""
-
 from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-# Bound the work a single request can cause (transformer calls, DB rows, bind parameters).
-# They are part of the API contract, hence constants rather than deployment settings.
 MAX_ITEMS = 1_000
 MAX_STRING_LENGTH = 1_000
 
-# Constraining the string also makes pydantic reject unpaired surrogates ("\ud800" escapes
-# in JSON), which the database could not encode and would turn into a 500.
+# The constraint also makes pydantic reject lone surrogates, which SQLite cannot store.
 Item = Annotated[str, StringConstraints(max_length=MAX_STRING_LENGTH)]
 
 
 class PayloadCreate(BaseModel):
     model_config = ConfigDict(
-        # A misspelled key must fail loudly instead of being silently dropped.
         extra="forbid",
         json_schema_extra={
             "examples": [

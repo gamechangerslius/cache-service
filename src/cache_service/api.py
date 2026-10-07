@@ -1,5 +1,3 @@
-"""HTTP routes. Kept thin: they translate between HTTP and the service layer."""
-
 from fastapi import APIRouter
 
 from cache_service.schemas import HealthResponse

@@ -11,7 +11,6 @@ from cache_service.transformer import SimulatedTransformer
         ("first string", "FIRST STRING"),
         ("", ""),
         ("Mixed Case 123!", "MIXED CASE 123!"),
-        # Python's full Unicode case mapping can change the length of a string.
         ("straße", "STRASSE"),
     ],
 )

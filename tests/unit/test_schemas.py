@@ -1,5 +1,3 @@
-"""PayloadCreate is the single validation gate shared by the API and the CLI."""
-
 import pytest
 from pydantic import ValidationError
 

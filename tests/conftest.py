@@ -1,5 +1,3 @@
-"""Shared fixtures: every test gets its own database file and its own app instance."""
-
 from collections.abc import AsyncIterator
 from pathlib import Path
 
