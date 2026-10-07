@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -9,6 +10,13 @@ from cache_service.config import Settings
 from cache_service.db import create_engine, create_session_factory, init_db
 from cache_service.main import create_app
 from tests.support import SpyTransformer, serve
+
+
+@pytest.fixture(autouse=True)
+def _isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in list(os.environ):
+        if key.startswith(("CACHE_SERVICE_", "CACHE_CLI_")):
+            monkeypatch.delenv(key)
 
 
 @pytest.fixture

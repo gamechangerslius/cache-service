@@ -33,7 +33,7 @@ dev = [
 path = "src/cache_service/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cache_service"]
+packages = ["src/cache_service", "src/cache_cli"]
 
 [tool.ruff]
 line-length = 100
@@ -73,7 +73,7 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_default_test_loop_scope = "function"
 
 [tool.coverage.run]
-source = ["cache_service"]
+source = ["cache_service", "cache_cli"]
 branch = true
 # SQLAlchemy runs async database code in greenlets, invisible to coverage otherwise.
 concurrency = ["greenlet", "thread"]

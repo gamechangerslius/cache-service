@@ -17,12 +17,6 @@ def env_file(tmp_path: Path) -> Path:
     return path
 
 
-@pytest.fixture(autouse=True)
-def _clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    for key in ("CACHE_SERVICE_LOG_LEVEL", "CACHE_SERVICE_TRANSFORMER_MAX_CONCURRENCY"):
-        monkeypatch.delenv(key, raising=False)
-
-
 def test_reads_prefixed_keys_from_env_file_and_ignores_cli_keys(env_file: Path) -> None:
     settings = Settings(_env_file=env_file)
 
