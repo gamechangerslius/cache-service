@@ -3,9 +3,11 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv /opt/venv
 ENV PATH=/opt/venv/bin:$PATH
 WORKDIR /src
+COPY requirements.lock ./
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.lock
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN --mount=type=cache,target=/root/.cache/pip pip install .
+RUN --mount=type=cache,target=/root/.cache/pip pip install --no-deps .
 
 FROM python:3.12-slim
 ENV PATH=/opt/venv/bin:$PATH \

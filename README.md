@@ -73,6 +73,14 @@ python3.12 -m venv .venv
 .venv/bin/ruff format --check . && .venv/bin/ruff check . && .venv/bin/mypy && .venv/bin/pytest --cov
 ```
 
+The Docker image installs the pinned versions from `requirements.lock`. After changing
+dependencies, regenerate it in the same base image:
+
+```bash
+docker run --rm -v "$PWD":/src:ro python:3.12-slim sh -c \
+  "pip install -q /src && pip freeze --exclude cache-service" > requirements.lock
+```
+
 Unit tests cover pure logic and argument parsing. Integration tests use a real SQLite file per
 test, the app over ASGI, and the CLI against a live uvicorn server. The transformer is replaced
 by a spy that counts calls, which is how the tests check call minimisation.
