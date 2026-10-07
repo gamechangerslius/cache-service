@@ -29,6 +29,9 @@ dev = [
     "mypy>=2.4",
 ]
 
+[project.scripts]
+cache-cli = "cache_cli.main:main"
+
 [tool.hatch.version]
 path = "src/cache_service/__init__.py"
 
