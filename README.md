@@ -50,10 +50,11 @@ Exit codes: `0` success, `1` service error, `2` invalid arguments or input.
   id without calling the transformer.
 - Otherwise the distinct strings are looked up in the `transformations` table with one query, and
   only the misses are sent to the transformer, concurrently and with a concurrency limit.
-- Concurrent requests that miss the same string share one in-flight call. Inserts use
-  `ON CONFLICT DO NOTHING`, so races between requests are harmless.
-- If the transformer fails, the strings that succeeded stay cached and the request returns `502`.
-  A retry only transforms the rest.
+- Each result is saved as soon as its call returns. A request that needs a string already being
+  transformed waits for that call, and the database is re-checked right before every call, so
+  within one process each string is transformed once.
+- If the transformer fails, the request returns `502`. The strings that succeeded are already
+  saved, so a retry only transforms the rest.
 - The generated output is stored with the payload, so `GET` is a single primary-key read.
 
 ## Configuration

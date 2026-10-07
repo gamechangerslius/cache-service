@@ -3,7 +3,7 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from cache_service.repositories import TransformationRepository
 from cache_service.transformer import Transformer, TransformerError
@@ -15,47 +15,65 @@ logger = logging.getLogger(__name__)
 class TransformResult:
     outputs: dict[str, str]
     cache_hits: int
-    cache_misses: int
+    transformer_calls: int
 
 
 class CachedTransformer:
-    def __init__(self, transformer: Transformer, max_concurrency: int) -> None:
+    def __init__(
+        self,
+        transformer: Transformer,
+        session_factory: async_sessionmaker[AsyncSession],
+        max_concurrency: int,
+    ) -> None:
         self._transformer = transformer
+        self._session_factory = session_factory
         self._semaphore = asyncio.Semaphore(max_concurrency)
-        self._in_flight: dict[str, asyncio.Task[str]] = {}
+        self._in_flight: dict[str, asyncio.Task[tuple[str, bool]]] = {}
 
-    async def transform_many(self, session: AsyncSession, texts: Iterable[str]) -> TransformResult:
+    async def transform_many(self, texts: Iterable[str]) -> TransformResult:
         unique = list(dict.fromkeys(texts))
-        repository = TransformationRepository(session)
-        cached = await repository.get_many(unique)
-        misses = [text for text in unique if text not in cached]
+        async with self._session_factory() as session:
+            outputs = await TransformationRepository(session).get_many(unique)
+        cache_hits = len(outputs)
+        misses = [text for text in unique if text not in outputs]
 
         outcomes = await asyncio.gather(
             *(self._transform(text) for text in misses), return_exceptions=True
         )
-        computed: dict[str, str] = {}
+        failed = 0
+        transformer_calls = 0
         for text, outcome in zip(misses, outcomes, strict=True):
             if isinstance(outcome, BaseException):
                 logger.warning("transformer failed for %r", text, exc_info=outcome)
+                failed += 1
             else:
-                computed[text] = outcome
+                output, called = outcome
+                outputs[text] = output
+                transformer_calls += called
 
-        await repository.add_many(computed)
-        if len(computed) < len(misses):
-            failed = len(misses) - len(computed)
+        if failed:
             raise TransformerError(f"{failed} of {len(misses)} strings could not be transformed")
         return TransformResult(
-            outputs=cached | computed, cache_hits=len(cached), cache_misses=len(misses)
+            outputs=outputs, cache_hits=cache_hits, transformer_calls=transformer_calls
         )
 
-    async def _transform(self, text: str) -> str:
+    async def _transform(self, text: str) -> tuple[str, bool]:
         task = self._in_flight.get(text)
+        owner = task is None
         if task is None:
-            task = asyncio.create_task(self._call_transformer(text))
+            task = asyncio.create_task(self._fetch(text))
             self._in_flight[text] = task
             task.add_done_callback(lambda _: self._in_flight.pop(text, None))
-        return await asyncio.shield(task)
+        output, called = await asyncio.shield(task)
+        return output, owner and called
 
-    async def _call_transformer(self, text: str) -> str:
+    async def _fetch(self, text: str) -> tuple[str, bool]:
         async with self._semaphore:
-            return await self._transformer(text)
+            async with self._session_factory() as session:
+                stored = (await TransformationRepository(session).get_many([text])).get(text)
+            if stored is not None:
+                return stored, False
+            output = await self._transformer(text)
+            async with self._session_factory.begin() as session:
+                await TransformationRepository(session).add_many({text: output})
+        return output, True

@@ -27,9 +27,11 @@ def create_app(
         _configure_logging(resolved.log_level)
         engine = create_engine(resolved.database_url)
         await init_db(engine)
-        app.state.session_factory = create_session_factory(engine)
+        session_factory = create_session_factory(engine)
+        app.state.session_factory = session_factory
         app.state.cached_transformer = CachedTransformer(
             transformer or SimulatedTransformer(resolved.transformer_latency_seconds),
+            session_factory,
             max_concurrency=resolved.transformer_max_concurrency,
         )
         try:

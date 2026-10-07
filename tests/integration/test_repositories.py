@@ -12,6 +12,8 @@ async def test_get_many_returns_only_stored_texts(
         repository = TransformationRepository(session)
         await repository.add_many({"a": "A", "b": "B"})
 
+        await repository.add_many({})
+
         assert await repository.get_many(["a", "b", "c"]) == {"a": "A", "b": "B"}
         assert await repository.get_many([]) == {}
 

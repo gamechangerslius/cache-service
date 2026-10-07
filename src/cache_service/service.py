@@ -8,7 +8,6 @@ from cache_service.cache import CachedTransformer
 from cache_service.payloads import fingerprint, interleave, render_output
 from cache_service.repositories import PayloadRepository
 from cache_service.schemas import PayloadCreate
-from cache_service.transformer import TransformerError
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +35,7 @@ class PayloadService:
             logger.info("payload reused id=%s", existing_id)
             return CreatedPayload(existing_id, created=False)
 
-        try:
-            result = await self._transformer.transform_many(
-                self._session, [*request.list_1, *request.list_2]
-            )
-        except TransformerError:
-            await self._session.commit()
-            raise
-
+        result = await self._transformer.transform_many([*request.list_1, *request.list_2])
         outputs = result.outputs
         output = render_output(
             interleave(
@@ -54,11 +46,11 @@ class PayloadService:
         payload_id, created = await self._payloads.create_if_absent(inputs_hash, output)
         await self._session.commit()
         logger.info(
-            "payload %s id=%s cache_hits=%d cache_misses=%d",
+            "payload %s id=%s cache_hits=%d transformer_calls=%d",
             "created" if created else "reused",
             payload_id,
             result.cache_hits,
-            result.cache_misses,
+            result.transformer_calls,
         )
         return CreatedPayload(payload_id, created)
 
