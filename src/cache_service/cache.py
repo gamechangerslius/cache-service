@@ -43,9 +43,11 @@ class CachedTransformer:
         failed = 0
         transformer_calls = 0
         for text, outcome in zip(misses, outcomes, strict=True):
-            if isinstance(outcome, BaseException):
+            if isinstance(outcome, TransformerError):
                 logger.warning("transformer failed for %r", text, exc_info=outcome)
                 failed += 1
+            elif isinstance(outcome, BaseException):
+                raise outcome
             else:
                 output, called = outcome
                 outputs[text] = output

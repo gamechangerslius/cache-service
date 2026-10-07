@@ -2,7 +2,8 @@ import asyncio
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
 
 from cache_service.config import Settings
 from cache_service.main import create_app
@@ -144,3 +145,18 @@ async def test_transformer_failure_returns_502_and_keeps_partial_results(
     assert retried.status_code == 201
     assert spy.calls["first string"] == 1
     assert spy.calls["second string"] == 2
+
+
+async def test_unexpected_transformer_errors_return_500(settings: Settings) -> None:
+    async def broken(text: str, /) -> str:
+        raise ValueError("bug in the client")
+
+    app = create_app(settings, transformer=broken)
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    async with (
+        LifespanManager(app),
+        AsyncClient(transport=transport, base_url="http://test") as client,
+    ):
+        response = await client.post("/payload", json=SAMPLE)
+
+    assert response.status_code == 500

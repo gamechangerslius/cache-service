@@ -151,3 +151,15 @@ async def test_cancelled_request_does_not_cancel_a_shared_call(
 
     assert result.outputs == {"a": "A"}
     assert spy.calls == {"a": 1}
+
+
+async def test_unexpected_errors_are_not_reported_as_transformer_failures(
+    session_factory: SessionFactory,
+) -> None:
+    async def broken(text: str, /) -> str:
+        raise ValueError("bug in the client")
+
+    cached = CachedTransformer(broken, session_factory, max_concurrency=1)
+
+    with pytest.raises(ValueError, match="bug in the client"):
+        await cached.transform_many(["a"])

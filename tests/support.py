@@ -10,6 +10,8 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+from cache_service.transformer import TransformerError
+
 
 class SpyTransformer:
     def __init__(self, *, delay: float = 0, fail_on: Iterable[str] = ()) -> None:
@@ -28,7 +30,7 @@ class SpyTransformer:
         finally:
             self.active -= 1
         if text in self.fail_on:
-            raise RuntimeError(f"cannot transform {text!r}")
+            raise TransformerError(f"cannot transform {text!r}")
         return text.upper()
 
 
