@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from cache_service.cache import CachedTransformer
 from cache_service.payloads import fingerprint, interleave, render_output
@@ -23,14 +23,16 @@ class PayloadNotFoundError(Exception):
 
 
 class PayloadService:
-    def __init__(self, session: AsyncSession, transformer: CachedTransformer) -> None:
-        self._session = session
+    def __init__(
+        self, session_factory: async_sessionmaker[AsyncSession], transformer: CachedTransformer
+    ) -> None:
+        self._session_factory = session_factory
         self._transformer = transformer
-        self._payloads = PayloadRepository(session)
 
     async def create(self, request: PayloadCreate) -> CreatedPayload:
         inputs_hash = fingerprint(request.list_1, request.list_2)
-        existing_id = await self._payloads.get_id_by_hash(inputs_hash)
+        async with self._session_factory() as session:
+            existing_id = await PayloadRepository(session).get_id_by_hash(inputs_hash)
         if existing_id is not None:
             logger.info("payload reused id=%s", existing_id)
             return CreatedPayload(existing_id, created=False)
@@ -43,8 +45,10 @@ class PayloadService:
                 [outputs[text] for text in request.list_2],
             )
         )
-        payload_id, created = await self._payloads.create_if_absent(inputs_hash, output)
-        await self._session.commit()
+        async with self._session_factory.begin() as session:
+            payload_id, created = await PayloadRepository(session).create_if_absent(
+                inputs_hash, output
+            )
         logger.info(
             "payload %s id=%s cache_hits=%d transformer_calls=%d",
             "created" if created else "reused",
@@ -55,7 +59,8 @@ class PayloadService:
         return CreatedPayload(payload_id, created)
 
     async def get_output(self, payload_id: UUID) -> str:
-        output = await self._payloads.get_output(payload_id)
+        async with self._session_factory() as session:
+            output = await PayloadRepository(session).get_output(payload_id)
         if output is None:
             raise PayloadNotFoundError(payload_id)
         return output

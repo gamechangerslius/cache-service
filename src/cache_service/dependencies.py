@@ -17,9 +17,10 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def get_payload_service(request: Request, session: SessionDep) -> PayloadService:
+def get_payload_service(request: Request) -> PayloadService:
+    session_factory: async_sessionmaker[AsyncSession] = request.app.state.session_factory
     cached_transformer: CachedTransformer = request.app.state.cached_transformer
-    return PayloadService(session, cached_transformer)
+    return PayloadService(session_factory, cached_transformer)
 
 
 PayloadServiceDep = Annotated[PayloadService, Depends(get_payload_service)]

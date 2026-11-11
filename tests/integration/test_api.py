@@ -160,3 +160,19 @@ async def test_unexpected_transformer_errors_return_500(settings: Settings) -> N
         response = await client.post("/payload", json=SAMPLE)
 
     assert response.status_code == 500
+
+
+async def test_concurrent_creates_are_not_limited_by_the_connection_pool(
+    settings: Settings,
+) -> None:
+    spy = SpyTransformer(delay=0.05)
+
+    async with serve(create_app(settings, transformer=spy)) as client:
+        responses = await asyncio.gather(
+            *(
+                client.post("/payload", json={"list_1": [f"a{i}"], "list_2": [f"b{i}"]})
+                for i in range(20)
+            )
+        )
+
+    assert [response.status_code for response in responses] == [201] * 20
