@@ -53,6 +53,10 @@ Exit codes: `0` success, `1` service error, `2` invalid arguments or input.
 - Each result is saved as soon as its call returns. A request that needs a string already being
   transformed waits for that call, and the database is re-checked right before every call, so
   within one process each string is transformed once.
+- No database connection is held while the transformer runs. A create request looks up the
+  payload hash, releases the connection, waits for the transformer, and stores the payload in
+  a separate short transaction, so the connection pool does not limit how many requests can
+  wait on the transformer at once.
 - If the transformer fails, the request returns `502`. The strings that succeeded are already
   saved, so a retry only transforms the rest.
 - The generated output is stored with the payload, so `GET` is a single primary-key read.
